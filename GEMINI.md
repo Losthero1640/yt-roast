@@ -2,7 +2,11 @@
 
 ## Project
 
-Project not yet initialized. Run /gsd-new-project to set up.
+**YouTube Roast AI**
+
+A privacy-conscious, witty web application that analyzes a user's available YouTube viewing-related data to generate a personalized, brutally honest, humorous AI roast report. The roast calculates a "Brainrot score," flags recurring content rabbit holes, and provides an entertaining personality analysis grounded strictly in observed viewing data without persisting personal history.
+
+**Core Value:** Generate a savagely funny, authentic, and shareable AI roast of the user's YouTube habits while ensuring strict data privacy with zero persistent database storage.
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->

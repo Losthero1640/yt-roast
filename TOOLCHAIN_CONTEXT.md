@@ -6,19 +6,19 @@ Quick reference guide summarizing all active skills, toolchains, and extensions 
 
 ## 1. Core Toolchain Matrix
 
-| Tool | Role / Persona | Best Used For |
+| Tool | Role / Persona | Status / Usage Rule |
 | :--- | :--- | :--- |
-| **GSD (Get Shit Done)** | **Technical PM & Architect** | Scope management, phase planning (`/gsd-plan-phase`), execution (`/gsd-execute-phase`), rapid delivery (`/gsd-quick`), and UAT (`/gsd-verify-work`). |
-| **Ponytail** | **Pragmatic Senior Dev (YAGNI)** | Anti-bloat reviews, eliminating over-engineering, code audits (`/ponytail-audit`), diff reviews (`/ponytail-review`), and tracking shortcuts (`/ponytail-debt`). |
-| **Roo Code** *(Zoo Code)* | **Interactive IDE Pair Programmer** | Hands-on scaffolding, iterative coding, interactive debugging, environment setups, and live file tweaks in the editor. |
-| **Ralph Loop** | **Autonomous Batch Worker** | Long-running autonomous loops, executing multi-step PRD task lists, and repetitive unattended tasks. |
-| **CodeRabbit** | **Pre-Merge PR Quality Gate** | Automated PR reviews, catching regressions, security audits, and pull request compliance before merging. |
+| **GSD (Get Shit Done)** | **Technical PM & Architect** | **Active Core:** Scope management, phase planning (`/gsd-plan-phase`), execution (`/gsd-execute-phase`), rapid delivery (`/gsd-quick`), and UAT (`/gsd-verify-work`). |
+| **Ponytail** | **Pragmatic Senior Dev (YAGNI)** | **Active Core:** Anti-bloat reviews, eliminating over-engineering, code audits (`/ponytail-audit`), diff reviews (`/ponytail-review`), and tracking shortcuts (`/ponytail-debt`). |
+| **Roo Code** *(Zoo Code)* | **Interactive IDE Pair Programmer** | **Active Core:** Hands-on scaffolding, iterative coding, interactive debugging, environment setups, and live file tweaks in the editor. |
+| **Ralph Loop** | **Autonomous Batch Worker** | **Conditional:** Reserved for well-defined, repetitive batch tasks and test-passing loops once architecture is frozen. Not used for early architecture or sensitive security phases. |
+| **CodeRabbit** | **Pre-Merge PR Quality Gate** | **Active Core:** Automated PR reviews, catching regressions, security audits, and pull request compliance before merging. |
 
 ---
 
 ## 2. Specialized Skills & Engines
 
-### UI/UX & Design Intelligence
+### UI/UX & Design Intelligence (Deferred to Post-MVP Frontend Phase)
 * **UI/UX Pro Max**: Design systems, color palettes, typography pairings, stack guides, and search scripts in [`.agent/skills/ui-ux-pro-max`](file:///C:/Users/ayush/OneDrive/Documents/projects/extensions/.agent/skills/ui-ux-pro-max).
 * **Impeccable & Emil Kowalski**: High-polish interaction design, micro-animations, Apple-style physics, gesture handling, and web interface guidelines.
 * **Taste Skill (`design-taste-frontend`)**: Anti-slop frontend art direction based on curated award-winning sites.
@@ -28,7 +28,7 @@ Quick reference guide summarizing all active skills, toolchains, and extensions 
 * **REA (Reverse Engineer Anything)**: Decompilation, binary analysis, web runtime inspection, and reverse engineering workflows.
 
 ### Backend, Data & Cloud
-* **Databases**: `postgres`, `mysql` schema planning and performance tuning.
+* **Databases**: `postgres`, `mysql` schema planning and performance tuning *(Note: yt roast MVP uses zero databases)*.
 * **Data Pipelines & GCP**: BigQuery SQL, dbt, Dataform, GCP Spark/Dataflow, and Cloud Composer orchestration.
 
 ---

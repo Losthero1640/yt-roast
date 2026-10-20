@@ -2,99 +2,68 @@
 
 ## Overview
 
-A phased journey to construct a privacy-first, backend-first MVP for YouTube Roast AI. The application implements an in-memory streaming ingestion engine for Google Takeout exports, a statistical signal normalizer, a Gemini Flash AI roast engine with strict JSON schema enforcement, a dual-mode REST API (Takeout upload + YouTube OAuth for Likes/Subs), and end-to-end verification without any database persistence.
+A condensed 3-phase journey to construct a privacy-first, backend-first MVP for YouTube Roast AI. The application implements an in-memory streaming ingestion engine for Google Takeout exports, a statistical normalizer, a Gemini Flash AI roast engine with strict JSON schema enforcement, a dual-mode REST API (Mode 1: Quick Roast via OAuth; Mode 2: Full History Roast via unzipped Takeout upload), and strict privacy verification without any persistent database storage.
 
 ---
 
 ## Phases
 
-- [ ] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — Node.js/TypeScript setup, in-memory streaming Takeout parser, and demo data loader with bounded memory guarantees.
-- [ ] **Phase 2: Signal Normalization & Brainrot Metrics Engine** — Statistical aggregation of viewing hours, binge-patterns, top creators, repeated titles, and deterministic Brainrot scoring.
-- [ ] **Phase 3: Gemini Flash AI Roast Engine & Structured Output** — Gemini Flash client integration, strict JSON Schema generation, and satirical guardrails.
-- [ ] **Phase 4: Dual-Mode REST API & OAuth Handlers** — Fastify/Express HTTP endpoints (`/upload`, `/oauth`, `/demo`, `/health`), multipart streaming, and OAuth test fixtures.
-- [ ] **Phase 5: End-to-End Verification, Security Hardening & UAT** — Vitest automated test suite, memory/leak audit, PII redaction checks, and acceptance sign-off.
+- [ ] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — TypeScript backend foundation, streaming Takeout JSON parser, deleted-video filtering, UTF-8 normalization, deterministic Brainrot scoring, and demo profile loader.
+- [ ] **Phase 2: Gemini Flash AI Roast Engine & Structured Validation** — Gemini Flash integration with configurable model ID, prompt builder with PII stripping, schema enforcement (`responseSchema` + Zod), satirical guardrails, and error handling.
+- [ ] **Phase 3: Dual-Mode REST API, Live Google OAuth & Privacy Hardening** — Fastify REST endpoints (`/upload`, `/demo`, `/oauth`, `/health`), Mode 1 Quick Roast (OAuth likes/subs), `no-store` headers, sanitized errors, memory acceptance verification, and end-to-end acceptance tests.
 
 ---
 
 ## Phase Details
 
 ### Phase 1: Project Scaffolding & Takeout Stream Ingestion
-**Goal**: Establish a lightweight TypeScript backend project and implement a streaming in-memory parser for Google Takeout `watch-history.json` exports that runs safely under bounded memory.
+**Goal**: Establish a lightweight TypeScript backend project and implement a streaming in-memory parser and statistical normalizer for unzipped Google Takeout `watch-history.json` exports with bounded memory usage.
 **Depends on**: Nothing
-**Requirements**: INGEST-01, INGEST-02, INGEST-05, PRIV-01, PRIV-02, PRIV-04
+**Requirements**: `INGEST-01`, `INGEST-02`, `INGEST-03`, `INGEST-04`, `NORM-01`, `NORM-02`, `NORM-03`, `NORM-04`, `NORM-05`, `PRIV-01`, `PRIV-02`, `TEST-01`, `TEST-02`
 **Success Criteria**:
-  1. Project initializes with TypeScript, Fastify/Express, and Vitest with zero database dependencies.
-  2. Streaming parser consumes simulated 50MB+ Takeout files in-memory without exceeding 50MB process heap or writing to disk.
-  3. Parser handles missing fields, deleted video notices, and malformed objects gracefully without crashing.
-  4. Demo synthetic profile can be loaded instantly without file upload.
+  1. TypeScript project initializes with Fastify, stream parsers, and Vitest with zero database dependencies.
+  2. Streaming parser consumes unzipped `watch-history.json` entries on the fly, correctly filtering deleted-video placeholders (`title: "Watched a video that has been removed"`) and missing subtitles without crashing.
+  3. Parser and normalizer process multi-language titles, non-Latin scripts, and emojis with correct UTF-8 decoding.
+  4. Normalizer extracts selective high-signal evidence (top 15 creators, repeated video titles, notable late-night titles paired with derived viewing-hour context such as "watched around 2 AM", topic pairings) and computes a deterministic baseline Brainrot score (0–100) without accumulating full history logs.
+  5. Synthetic demo profile loads on demand; datasets with fewer than 20 entries trigger an honest fallback message.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Project structure, package.json, TypeScript, config, and logger with token/PII redaction.
-- [ ] 01-02: Streaming Takeout JSON parser with edge-case handling and demo profile loader.
+- [ ] 01-01: Project scaffolding, config, streaming Takeout JSON parser, deleted-video filter, and demo profile loader.
+- [ ] 01-02: Statistical normalizer, viewing-hour bins, deterministic Brainrot formula, and Vitest fixture test suite.
 
 ---
 
-### Phase 2: Signal Normalization & Brainrot Metrics Engine
-**Goal**: Transform parsed watch events into a compact, anonymized statistical profile containing peak viewing hours, repeated content velocity, creator histograms, and deterministic Brainrot metrics.
+### Phase 2: Gemini Flash AI Roast Engine & Structured Validation
+**Goal**: Connect the normalized viewing signals to the Google Gemini API, enforcing strict structured JSON output for a multi-section, varied roast report (pattern roasts, combination roasts, specific title/creator roasts, recurring-character archetype, and coherent final verdict) with satirical grounding guardrails.
 **Depends on**: Phase 1
-**Requirements**: NORM-01, NORM-02, NORM-03, NORM-04, NORM-05, PRIV-03
+**Requirements**: `AI-01`, `AI-02`, `AI-03`, `AI-04`, `AI-05`, `PRIV-03`, `TEST-03`
 **Success Criteria**:
-  1. Signal normalizer collapses raw history arrays down to a <4KB summary payload containing top 15 creators, late-night binge ratios, and repeat clusters.
-  2. Deterministic baseline Brainrot index is calculated with transparent rule weights.
-  3. Datasets with fewer than 20 records trigger an honest "insufficient data" signal instead of fabricated stats.
-  4. All personal identifiers (channel URLs, timestamps down to the second, user identifiers) are stripped.
+  1. Roast service connects to Gemini API using a model ID configured via `GEMINI_MODEL` (defaulting to a supported Flash model, e.g. `gemini-2.5-flash`), with credentials loaded from `GEMINI_API_KEY`.
+  2. Prompt builder constructs high-signal comedic evidence context (creator frequencies, repeated titles, derived viewing-hour context, and unexpected topic pairings) while strictly purging user identifiers, channel URLs, exact ISO timestamps, and bulk logs.
+  3. Output validates 100% against the multi-joke Zod schema (`brainrotScore`, `viewingArchetype`, `roastSummary`, structured `roasts` array with style/joke/evidence/reference, `redFlags`, `finalVerdict`, `cardPayload`).
+  4. Comedic guardrails enforce variety across joke styles, prevent repetitive templates, and strictly distinguish observed viewing facts from satirical interpretation.
+  5. Abort controller terminates generation if response exceeds 15 seconds; provider rate limits (429) return uniform structured error payloads.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Aggregator logic for time distributions (12 AM–5 AM binge detection), creator frequencies, and repeat views.
-- [ ] 02-02: Deterministic Brainrot scoring formula and insufficient data detector with unit tests.
+- [ ] 02-01: Gemini API client integration, prompt builder with PII stripping, and Zod response schema definition.
+- [ ] 02-02: Satirical guardrails, timeout/rate-limit handlers, and Vitest suite with mocked Gemini responses.
 
 ---
 
-### Phase 3: Gemini Flash AI Roast Engine & Structured Output
-**Goal**: Connect the normalized viewing signal to Google Gemini Flash (`gemini-3.8-flash`) and enforce strict JSON Schema output validating the roast report, Brainrot score, red flags, and personality verdict.
+### Phase 3: Dual-Mode REST API, Live Google OAuth & Privacy Hardening
+**Goal**: Wire the ingestion, normalization, and AI roast engines into clean Fastify HTTP routes supporting both Mode 1 (OAuth Likes/Subs) and Mode 2 (Takeout Upload), with strict privacy headers, sanitized errors, and empirical memory verification.
 **Depends on**: Phase 2
-**Requirements**: AI-01, AI-02, AI-03, AI-04, AI-05
+**Requirements**: `API-01`, `API-02`, `API-03`, `API-04`, `API-05`, `SEC-01`, `SEC-02`, `PRIV-04`, `TEST-04`, `TEST-05`
 **Success Criteria**:
-  1. Gemini Flash API client connects securely via `GEMINI_API_KEY` with schema-enforced structured output.
-  2. Generated report validates 100% against the Zod roast schema (brainrot score, archetype, roast summary, red flags, personality verdict, card payload).
-  3. Roast commentary cites at least 3 concrete observed creators or themes and avoids clinical diagnostic claims.
-  4. Timeout (15s abort) and rate-limit error handling return uniform structured error responses.
+  1. REST endpoints (`POST /api/roast/upload`, `GET /api/roast/demo`, `GET /api/roast/oauth/url`, `GET /api/roast/oauth/callback`, `GET /api/health`) are operational, incorporating explicit pre-upload user consent and disclosures that selected viewing details are transmitted under Google Gemini retention terms.
+  2. Upload endpoint rejects payloads exceeding 100MB with HTTP 413 without buffering excess bytes into memory.
+  3. Mode 1 Quick Roast retrieves subscriptions and likes via YouTube Data API v3 (`https://www.googleapis.com/auth/youtube.readonly`) using environment variables for live credentials and fixtures for local testing, returning a roast with a mandatory disclosure badge.
+  4. All roast responses include `Cache-Control: no-store, private, max-age=0`; global error handlers sanitize exceptions and strip stack traces.
+  5. Memory and zero-disk acceptance test measures baseline heap, peak heap, incremental heap usage, and total process RSS during streaming of a 50MB+ synthetic fixture (reporting measured evidence if thresholds require revision), and verifies zero filesystem write calls occurred during request processing.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Gemini Flash client setup, prompt builder, and Zod response schema definition.
-- [ ] 03-02: Error handling, timeout abort, retry logic, and fallback responses.
-
----
-
-### Phase 4: Dual-Mode REST API & OAuth Handlers
-**Goal**: Wire the ingestion, normalization, and AI engines into clean HTTP endpoints supporting both Mode A (OAuth Likes/Subs) and Mode B (Takeout upload).
-**Depends on**: Phase 3
-**Requirements**: INGEST-03, INGEST-04, API-01, API-02, API-03
-**Success Criteria**:
-  1. `POST /api/roast/upload` accepts multipart file upload, streams to memory, and returns the roast report.
-  2. `GET /api/roast/demo` returns an instant roast based on the synthetic demo profile.
-  3. `GET /api/roast/oauth/url` and `/callback` implement Mode A (Subscriptions & Likes roast) with test fixture support.
-  4. Payloads exceeding 100MB immediately trigger a 413 Payload Too Large error without buffering into memory.
-**Plans**: 2 plans
-
-Plans:
-- [ ] 04-01: REST API server setup, `/upload`, `/demo`, and `/health` endpoints with multipart streaming.
-- [ ] 04-02: Mode A OAuth flow integration, token exchange, and Subscriptions/Likes normalizer with test fixtures.
-
----
-
-### Phase 5: End-to-End Verification, Security Hardening & UAT
-**Goal**: Validate the entire backend pipeline against the product principles, verify zero disk retention, run comprehensive Vitest tests, and finalize the backend MVP milestone.
-**Depends on**: Phase 4
-**Requirements**: TEST-01, TEST-02, TEST-03, TEST-04
-**Success Criteria**:
-  1. Comprehensive Vitest suite passes 100% across parser, normalizer, AI service, and API routes.
-  2. Privacy audit confirms zero temporary files created in `/tmp`, workspace, or memory leaks after processing 5 consecutive uploads.
-  3. Backend MVP is documented with curl examples and ready for Phase 2 frontend integration.
-**Plans**: 1 plan
-
-Plans:
-- [ ] 05-01: End-to-end integration tests, privacy/retention audit, and milestone acceptance verification.
+- [ ] 03-01: Fastify REST server, multipart streaming upload, security headers, demo route, and error sanitization.
+- [ ] 03-02: Mode 1 OAuth flow integration, mock test fixtures, memory/disk acceptance test, and end-to-end UAT.

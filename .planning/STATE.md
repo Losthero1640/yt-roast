@@ -2,9 +2,9 @@
 gsd_state_version: '1.0'
 status: planning
 progress:
-  total_phases: 5
+  total_phases: 3
   completed_phases: 0
-  total_plans: 9
+  total_plans: 6
   completed_plans: 0
   percent: 0
 ---
@@ -13,17 +13,17 @@ progress:
 
 ## Project Reference
 
-See: [.planning/PROJECT.md](file:///c:/Users/ayush/OneDrive/Documents/projects/yt%20roast/.planning/PROJECT.md) (defined October 2026)
+See: [.planning/PROJECT.md](file:///c:/Users/ayush/OneDrive/Documents/projects/yt%20roast/.planning/PROJECT.md) (revised October 2026)
 
-**Core value:** Generate a savagely funny, authentic, and shareable AI roast of the user's YouTube habits while ensuring 100% data privacy with zero persistent database storage.  
+**Core value:** Generate a savagely funny, authentic, and shareable AI roast of the user's YouTube habits while ensuring strict data privacy with zero persistent database storage.  
 **Current focus:** Phase 1 — Project Scaffolding & Takeout Stream Ingestion
 
 ## Current Position
 
-Phase: 0 of 5 (Pre-execution / Roadmap Approved)  
+Phase: 0 of 3 (Planning Reviewed & Approved)  
 Plan: None active  
 Status: Ready to plan Phase 1  
-Last activity: 2026-10-21 — Initialized project context, completed data source feasibility research, defined requirements, and drafted 5-phase roadmap.
+Last activity: 2026-10-21 — Completed Ponytail review, aligned 3-phase condensed roadmap, incorporated Gemini data-retention disclosures, memory test precision, and conditional Ralph Loop usage.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -35,10 +35,20 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Key Decisions & Architecture Log
 
-- **Feasibility Discovery:** YouTube Data API v3 has deprecated and disabled watch history playlists. Programmatic OAuth watch history is impossible.
-- **Dual-Mode Architecture:**
-  - **Mode A (Instant Roast):** YouTube OAuth for Subscriptions, Likes, and Playlists (`youtube.readonly`). Built with mock fixtures first.
-  - **Mode B (Full History Roast):** User upload of Google Takeout `watch-history.json` processed in-memory with streaming parser.
-- **Zero Database:** Confirmed zero database persistence for MVP. All processing is ephemeral and in-memory.
-- **AI Model Choice:** Google Gemini API (Gemini Flash / `gemini-3.8-flash`) via Google AI Studio API key with native JSON Schema output.
-- **Scope Boundary:** Backend-first MVP. Frontend UI generation deferred to subsequent phase after API contract verification.
+- **Dual-Mode MVP Confirmed:**
+  - **Mode 1 (Quick Roast):** YouTube OAuth retrieves subscriptions and liked videos (`youtube.readonly`). Transparent disclosure that roast reflects taste profile, not complete watch history. Implemented in Phase 3 after core ingestion and AI engine are verified.
+  - **Mode 2 (Full History Roast):** Guided Google Takeout export for unzipped `watch-history.json` only (ZIP extraction deferred to post-MVP). In-memory streaming parser with deleted-video filtering and UTF-8 resilience.
+- **Condensed Phasing:** Consolidated from 5 phases into 3 high-impact phases.
+- **Zero Database Persistence:** Confirmed zero database storage for viewing history, OAuth tokens, or roast reports.
+- **Verified Gemini Integration & Retention:**
+  - Configurable model ID via `GEMINI_MODEL` (defaulting to supported Flash model).
+  - Paid-tier usage does not use data for model training, but retains data temporarily for abuse monitoring (up to 30 days).
+  - Strict PII stripping enforced before prompt assembly to mitigate third-party retention risks.
+- **Empirical Memory Testing:** Replaced vague "deterministic GC" claims with an explicit acceptance test measuring baseline vs streaming heap usage on a 50MB+ synthetic fixture, and verifying zero disk writes.
+- **Roast Quality & Multi-Joke Schema:** Configured multi-section roast report (pattern roasts, combination roasts, specific title/creator roasts, recurring-character archetype, coherent final verdict) with selective high-signal evidence extraction (repeat titles, late-night hours) while strictly purging user PII, URLs, and bulk raw logs.
+- **Toolchain Roles:**
+  - GSD: Project management, phase planning, and UAT gates.
+  - Ponytail: Anti-bloat senior dev review.
+  - Roo Code: Interactive pair programming and incremental implementation.
+  - Ralph Loop: Conditional tool (optional for repetitive batch tasks post-architecture).
+  - CodeRabbit: PR code reviews.
