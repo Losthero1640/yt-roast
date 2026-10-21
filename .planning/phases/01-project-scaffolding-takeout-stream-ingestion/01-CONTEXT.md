@@ -14,22 +14,24 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
 
 ### 1. Brainrot Scoring Algorithm & Precise Subscores
 - **D-01 (Formulas & Weighting):** The deterministic 0–100 Brainrot score is calculated from three normalized 0–100 subscores:
-  $$\text{Score} = \text{round}(S_{\text{late}} \times 0.35 + S_{\text{rep}} \times 0.35 + S_{\text{vel}} \times 0.30)$$
-  - **Late-Night Subscore ($S_{\text{late}}$, 35% weight):**
+  $$\text{Score} = \text{round}(S_{\text{late}} \times w_{\text{late}} + S_{\text{rep}} \times w_{\text{rep}} + S_{\text{vel}} \times w_{\text{vel}})$$
+  *(where normal weights are $w_{\text{late}} = 0.35$, $w_{\text{rep}} = 0.35$, $w_{\text{vel}} = 0.30$)*
+
+  - **Late-Night Subscore ($S_{\text{late}}$, 35% normal weight):**
     - $R_{\text{late}} = (\text{views between 12:00 AM and 4:59 AM}) / (\text{total valid-timestamp views})$
-    - Normal baseline $\le 5\%$, severe threshold $\ge 25\%$:
-    - $S_{\text{late}} = \min(100, \text{round}((R_{\text{late}} / 0.25) \times 100))$
-  - **Creator & Title Repetition Subscore ($S_{\text{rep}}$, 35% weight):**
+    - **Baseline & Ceiling:** A late-night ratio of $\le 5\%$ is the baseline ($0$ points). A ratio of $\ge 25\%$ reaches the maximum subscore ($100$ points). Linear scaling between 5% and 25%:
+      $$S_{\text{late}} = \min\left(100, \; \max\left(0, \; \text{round}\left(\frac{R_{\text{late}} - 0.05}{0.20} \times 100\right)\right)\right)$$
+  - **Creator & Title Repetition Subscore ($S_{\text{rep}}$, 35% normal weight):**
     - Composed of 20% Top-5 Creator concentration + 15% Title Re-watches:
     - $C_{\text{top5}} = (\text{views of top 5 creators}) / (\text{total valid views})$. Normal $\le 15\%$, high $\ge 50\%$:
-      $S_{\text{creator}} = \min(100, \max(0, \text{round}(((C_{\text{top5}} - 0.15) / 0.35) \times 100)))$
+      $$S_{\text{creator}} = \min(100, \max(0, \text{round}(((C_{\text{top5}} - 0.15) / 0.35) \times 100)))$$
     - $T_{\text{rep}} = (\sum(\text{playCount} - 1) \text{ for titles with } \ge 2 \text{ plays}) / (\text{total valid views})$. Normal $\le 2\%$, high $\ge 12\%$:
-      $S_{\text{title}} = \min(100, \text{round}((T_{\text{rep}} / 0.12) \times 100))$
+      $$S_{\text{title}} = \min(100, \text{round}((T_{\text{rep}} / 0.12) \times 100))$$
     - Combined: $S_{\text{rep}} = \text{round}((S_{\text{creator}} \times 20 + S_{\text{title}} \times 15) / 35)$
-  - **Watch Velocity Subscore ($S_{\text{vel}}$, 30% weight):**
+  - **Watch Velocity Subscore ($S_{\text{vel}}$, 30% normal weight):**
     - $V_{\text{cluster}} = (\text{views watched within } \le 20 \text{ min of previous view}) / (\text{total valid-timestamp views} - 1)$
     - Normal $\le 15\%$, severe doomscrolling $\ge 60\%$:
-    - $S_{\text{vel}} = \min(100, \max(0, \text{round}(((V_{\text{cluster}} - 0.15) / 0.45) \times 100)))$
+      $$S_{\text{vel}} = \min(100, \max(0, \text{round}(((V_{\text{cluster}} - 0.15) / 0.45) \times 100)))$$
   — **Reversibility:** reversible — all normalization coefficients and thresholds are isolated constants.
 - **D-02 (Comedic Tiers):** Normalizer assigns a 5-tier comedic classification based on the 0–100 score:
   - `0–19`: **Monk**
@@ -38,17 +40,26 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
   - `70–89`: **Deep Fried**
   - `90–100`: **Digital Zombie**
   — **Reversibility:** reversible.
-- **D-03 (Missing Data & Explicit Quality / Confidence Tracking):**
-  - Distinguish a genuinely low score from a score calculated on incomplete evidence.
-  - The scoring output structure must include:
+- **D-03 (Missing Data & Weight Renormalization Table):**
+  - Distinguishes a genuinely low score from a score calculated on incomplete evidence.
+  - **Exact Renormalization Matrix:**
+
+    | Case | Condition | Available Subscores | Renormalized Weights | Confidence | Notes / Notice |
+    | :--- | :--- | :--- | :--- | :--- | :--- |
+    | **Case A (Full Data)** | $\ge 20$ valid records, valid timestamps $\ge 20$, $\ge 2$ timestamped intervals | $S_{\text{late}}, S_{\text{rep}}, S_{\text{vel}}$ | $w_{\text{late}} = 0.35$<br>$w_{\text{rep}} = 0.35$<br>$w_{\text{vel}} = 0.30$ | `"high"` | Normal full composite score. |
+    | **Case B (Missing Timestamps)** | $\ge 20$ valid records, but $< 20$ valid timestamps or $> 50\%$ missing | $S_{\text{rep}}$ only<br>*(time metrics become `null`)* | $w_{\text{rep}} = 1.00$<br>($w_{\text{late}} = 0, w_{\text{vel}} = 0$) | `"low"` | `degradedNotice`: *"Score calculated on creator and title repetition only; time metrics unobserved."* Prevents false "Monk" score. |
+    | **Case C (Single Video / No Intervals)** | $\ge 20$ valid records, timestamps valid, but no consecutive session intervals ($< 2$ items) | $S_{\text{late}}, S_{\text{rep}}$<br>*(velocity becomes `null`)* | $w_{\text{late}} = 0.50$<br>$w_{\text{rep}} = 0.50$<br>($35/70$ each) | `"medium"` | `degradedNotice`: *"Session velocity omitted due to isolated timestamps."* |
+    | **Case D (Sparse Dataset)** | $< 20$ total valid records | None (`score: null`) | N/A | N/A | Triggers honest fallback per `NORM-05` (no fabrication). |
+
+  - Output payload contract:
     ```typescript
     export interface BrainrotScoreResult {
-      score: number;
-      tier: "Monk" | "Casual" | "Slime Brain" | "Deep Fried" | "Digital Zombie";
+      score: number | null; // null if < 20 records
+      tier: "Monk" | "Casual" | "Slime Brain" | "Deep Fried" | "Digital Zombie" | "Unranked";
       confidence: "high" | "medium" | "low";
       subscores: {
-        lateNight: number | null;
-        repetition: number;
+        lateNight: number | null; // null when uncomputable
+        repetition: number | null;
         velocity: number | null;
       };
       dataQuality: {
@@ -61,7 +72,6 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
       };
     }
     ```
-  - If timestamps are missing/insufficient (<20 valid timestamps), $S_{\text{late}}$ and $S_{\text{vel}}$ are `null`, weights are renormalized over $S_{\text{rep}}$, `confidence` is forced to `"low"`, and `degradedNotice` explicitly states that time metrics were omitted rather than assuming zero late-night activity.
   — **Reversibility:** reversible.
 
 ### 2. High-Signal Evidence Extraction Limits
@@ -89,12 +99,12 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
 - **D-10 (Malformed JSON & Truncation):** Fast-fail on truncated or syntactically corrupted JSON. Abort parsing immediately, clean up streams/sockets, and return a clear user-friendly error (`INVALID_JSON`). Do not write partial history to disk or retain partial results.
   — **Reversibility:** reversible.
 - **D-11 (Zero-Disk Multipart & Stream Pipeline Architecture):**
-  - **Multipart Configuration:** `@fastify/multipart` is configured with `attachFieldsToBody: false` and zero disk-temp adapters. The file stream is piped directly into `stream-json` parser via `stream.pipeline()`. Using a streaming JSON parser alone does not prevent disk writes; multipart middleware must never spool to disk.
+  - **Multipart Configuration:** `@fastify/multipart` is configured with `attachFieldsToBody: false` and zero disk-temp adapters. The multipart file stream is piped directly into the `stream-json` parser via `stream.pipeline()`. Using a streaming JSON parser alone does not prevent disk writes; multipart middleware must never spool to disk.
   - **Memory Bounds & 50MB+ Benchmark:** Incremental streaming JSON parser (`stream-json`) using an online reducer with backpressure. Never load full upload or parsed history into memory.
-  - **Automated Memory & Disk Verification:** Dedicated test suite executes against a **50MB+ synthetic fixture** asserting:
-    1. Incremental heap usage $< 30$ MB (`peakHeap - baselineHeap < 30MB`)
-    2. Peak heap usage $< 50$ MB
-    3. Filesystem-write interception (`vi.spyOn(fs, 'writeFile')`, `createWriteStream`, etc.) verifying zero disk calls.
+  - **Comprehensive Multi-Layer Zero-Disk Verification:** To ensure zero disk writes occur anywhere in the process (not just in the parser):
+    1. **API Interception Layer:** The test suite intercepts all Node.js file-writing APIs (`fs.writeFile`, `fs.promises.writeFile`, `fs.createWriteStream`, `fs.appendFile`, `fs.promises.appendFile`, `fs.open`, `fs.promises.open`) asserting zero calls.
+    2. **Filesystem State Snapshot Layer:** The test takes a complete directory snapshot (listing all files, sizes, and timestamps) of both the OS temporary directory (`os.tmpdir()`) and workspace directories immediately before and after upload streaming, asserting that no temporary or intermediate files were created or modified during the request.
+    3. **Heap Metrics on 50MB+ Synthetic Fixture:** Dedicated performance benchmark asserts incremental heap usage $< 30$ MB (`peakHeap - baselineHeap < 30MB`) and peak heap $< 50$ MB.
   — **Reversibility:** costly — core streaming architectural contract.
 
 ### 4. Bundled Demo Profile Archetype & Schema Timing
