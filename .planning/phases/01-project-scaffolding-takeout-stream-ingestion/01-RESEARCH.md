@@ -22,7 +22,7 @@
   - Case D (Sparse): $<20$ valid records $\implies$ abort with honest fallback (`NORM-05`).
 - **D-04–D-07 (Extraction Limits):** Top 5 creators with counts/shares, ranks 6–15 names only; Top 5 repeated titles ($\ge 3$ plays) + aggregate replay count; Top 5 late-night titles with derived hours; 20-min session clustering.
 - **D-08–D-11 (Resilience & Zero-Disk Pipeline):** Strip `"Watched "` prefix defensively; allowlist for deleted placeholders; fast-fail on malformed JSON; zero disk writes throughout request lifecycle; memory benchmark on 50MB+ fixture ($<30$MB incremental, $<50$MB peak heap).
-- **D-12–D-14 (Demo Profile & Schema):** "The 3 AM Productivity Goblin"; dual fixtures (synthetic Takeout JSON + precomputed module); canonical schema defined in `src/types/roast.ts` matching `AI-03`.
+- **D-12–D-14 (Demo Profile & Schema):** "The 3 AM Productivity Goblin"; dual fixtures (synthetic Takeout JSON + precomputed module); canonical schema defined in `src/schemas/roast.js` matching `AI-03`.
 
 ### Deferred Ideas (OUT OF SCOPE)
 - None.
@@ -63,19 +63,18 @@ Our research validates that:
 | `fastify` | `^5.0.0` or `^4.28.0` | HTTP Server | High throughput, first-class stream support, low overhead. |
 | `@fastify/multipart` | `^9.0.0` or `^8.3.0` | Multipart streaming | Built on Busboy, native streaming without disk-spooling. |
 | `stream-json` | `^1.9.0` | Streaming JSON parser | Defacto Node.js standard for streaming large JSON documents without full heap loading. |
-| `zod` | `^3.24.0` | Schema validation | Runtime validation and static type inference for Takeout records and roast schemas. |
-| `vitest` | `^3.0.0` or `^2.1.0` | Test Runner | Native TypeScript and ESM support, fast execution, built-in spying (`vi.spyOn`). |
+| `zod` | `^3.24.0` | Schema validation | Runtime validation for Takeout records and roast schemas directly in plain JavaScript. |
+| `vitest` | `^3.0.0` or `^2.1.0` | Test Runner | Native ESM and plain JavaScript test runner with built-in spying (`vi.spyOn`). |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
 | `stream-chain` | `^2.2.5` | Stream composition helper | Simplifies pipeline creation with `stream-json`. |
-| `tsx` | `^4.19.0` | TypeScript execution | Fast local development and test execution. |
 
 ### Installation Command
 ```bash
 npm install fastify @fastify/multipart stream-json stream-chain zod
-npm install -D typescript @types/node vitest tsx
+npm install -D vitest
 ```
 </standard_stack>
 
@@ -98,28 +97,24 @@ stream.pipeline()
 ```
 
 ### Stream Pipeline Implementation Pattern
-```typescript
+```javascript
 import { pipeline } from 'node:stream/promises';
 import { parser } from 'stream-json';
 import StreamArray from 'stream-json/streamers/StreamArray.js';
 import { Writable } from 'node:stream';
-import { TakeoutItem, OnlineAccumulator } from './types.js';
 
-export async function processTakeoutStream(
-  inputStream: NodeJS.ReadableStream,
-  accumulator: OnlineAccumulator
-): Promise<void> {
+export async function processTakeoutStream(inputStream, accumulator) {
   const jsonParser = parser();
   const arrayStream = StreamArray.withParser();
 
   const reducerSink = new Writable({
     objectMode: true,
-    write(chunk: { key: number; value: unknown }, _encoding, callback) {
+    write(chunk, _encoding, callback) {
       try {
-        accumulator.processItem(chunk.value as TakeoutItem);
+        accumulator.processItem(chunk.value);
         callback(); // releases backpressure for next item
       } catch (err) {
-        callback(err as Error);
+        callback(err);
       }
     }
   });
@@ -130,10 +125,10 @@ export async function processTakeoutStream(
 
 ### On-The-Fly 50MB+ Synthetic Stream Generator Pattern
 To test the 50MB+ fixture without consuming 50MB of heap RAM:
-```typescript
+```javascript
 import { Readable } from 'node:stream';
 
-export function createSyntheticTakeoutStream(targetSizeBytes: number): NodeJS.ReadableStream {
+export function createSyntheticTakeoutStream(targetSizeBytes) {
   let bytesEmitted = 0;
   let isFirst = true;
   let index = 0;
@@ -172,7 +167,7 @@ export function createSyntheticTakeoutStream(targetSizeBytes: number): NodeJS.Re
 ```
 
 ### Multi-Layer Zero-Disk-Write Verification Pattern
-```typescript
+```javascript
 import { vi, expect } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
@@ -207,7 +202,7 @@ export function setupZeroDiskSpies() {
 |---------|-------------|-------------|-----|
 | JSON stream parsing | Custom regex or string slicing on chunks | `stream-json` | Handling split JSON tokens, escaped Unicode, nested arrays across chunk boundaries is notoriously error-prone. |
 | Multipart decoding | Custom boundary regex parser | `@fastify/multipart` | RFC 7578 multipart specifications, boundary padding, character encodings, and headers are subtle and security-sensitive. |
-| Schema validation | Hand-written `typeof` checks | `zod` | Provides safe runtime parsing, strip unknown keys, and TypeScript type inference. |
+| Schema validation | Hand-written `typeof` checks | `zod` | Provides safe runtime parsing and data stripping directly in plain JavaScript. |
 </dont_hand_roll>
 
 <common_pitfalls>

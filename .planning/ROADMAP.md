@@ -8,7 +8,7 @@ A condensed 3-phase journey to construct a privacy-first, backend-first MVP for 
 
 ## Phases
 
-- [ ] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — TypeScript backend foundation, streaming Takeout JSON parser, deleted-video filtering, UTF-8 normalization, deterministic Brainrot scoring, and demo profile loader.
+- [ ] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — Node.js (plain JavaScript ES modules) backend foundation, streaming Takeout JSON parser, deleted-video filtering, UTF-8 normalization, deterministic Brainrot scoring, and demo profile loader.
 - [ ] **Phase 2: Gemini Flash AI Roast Engine & Structured Validation** — Gemini Flash integration with configurable model ID, prompt builder with PII stripping, schema enforcement (`responseSchema` + Zod), satirical guardrails, and error handling.
 - [ ] **Phase 3: Dual-Mode REST API, Live Google OAuth & Privacy Hardening** — Fastify REST endpoints (`/upload`, `/demo`, `/oauth`, `/health`), Mode 1 Quick Roast (OAuth likes/subs), `no-store` headers, sanitized errors, memory acceptance verification, and end-to-end acceptance tests.
 
@@ -17,11 +17,11 @@ A condensed 3-phase journey to construct a privacy-first, backend-first MVP for 
 ## Phase Details
 
 ### Phase 1: Project Scaffolding & Takeout Stream Ingestion
-**Goal**: Establish a lightweight TypeScript backend project and implement a streaming in-memory parser and statistical normalizer for unzipped Google Takeout `watch-history.json` exports with bounded memory usage.
+**Goal**: Establish a lightweight Node.js (plain JavaScript ES modules) backend project and implement a streaming in-memory parser and statistical normalizer for unzipped Google Takeout `watch-history.json` exports with bounded memory usage.
 **Depends on**: Nothing
 **Requirements**: `INGEST-01`, `INGEST-02`, `INGEST-03`, `INGEST-04`, `NORM-01`, `NORM-02`, `NORM-03`, `NORM-04`, `NORM-05`, `PRIV-01`, `PRIV-02`, `TEST-01`, `TEST-02`
 **Success Criteria**:
-  1. TypeScript project initializes with Fastify, stream parsers, and Vitest with zero database dependencies.
+  1. Node.js project initializes with Fastify, stream parsers, Zod runtime validation, and Vitest with zero database dependencies and no TypeScript build step.
   2. Streaming parser consumes unzipped `watch-history.json` entries on the fly, correctly filtering deleted-video placeholders (`title: "Watched a video that has been removed"`) and missing subtitles without crashing.
   3. Parser and normalizer process multi-language titles, non-Latin scripts, and emojis with correct UTF-8 decoding.
   4. Normalizer extracts selective high-signal evidence (top 15 creators, repeated video titles, notable late-night titles paired with derived viewing-hour context such as "watched around 2 AM", topic pairings) and computes a deterministic baseline Brainrot score (0–100) without accumulating full history logs.

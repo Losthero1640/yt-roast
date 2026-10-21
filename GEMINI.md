@@ -15,7 +15,7 @@ A privacy-conscious, witty web application that analyzes a user's available YouT
 
 ## 1. Backend & Runtime
 
-* **Selected:** **Node.js (TypeScript) + Fastify (or Express with streaming parser)**
+* **Selected:** **Node.js (plain JavaScript ES modules) + Fastify**
 
 ## 2. Ingestion & JSON Stream Parsing
 

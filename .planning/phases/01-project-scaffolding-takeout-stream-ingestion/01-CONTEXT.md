@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup, in-memory streaming JSON parser (`stream-json`), deleted-video placeholder filter, UTF-8 character resilience, statistical normalizer with deterministic Brainrot scoring, synthetic demo viewing profile, and Vitest fixture test suite. It guarantees zero persistent database storage and zero disk writes throughout the ingestion and normalization lifecycle.
+Phase 1 delivers the foundational Node.js backend using plain JavaScript ES modules (`.js`, `"type": "module"`), Fastify HTTP server setup, in-memory streaming JSON parser (`stream-json`), deleted-video placeholder filter, UTF-8 character resilience, statistical normalizer with deterministic Brainrot scoring, synthetic demo viewing profile, and Vitest fixture test suite. It guarantees zero persistent database storage and zero disk writes throughout the ingestion and normalization lifecycle.
 </domain>
 
 <decisions>
@@ -51,26 +51,16 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
     | **Case C (Single Video / No Intervals)** | $\ge 20$ valid records, timestamps valid, but no consecutive session intervals ($< 2$ items) | $S_{\text{late}}, S_{\text{rep}}$<br>*(velocity becomes `null`)* | $w_{\text{late}} = 0.50$<br>$w_{\text{rep}} = 0.50$<br>($35/70$ each) | `"medium"` | `degradedNotice`: *"Session velocity omitted due to isolated timestamps."* |
     | **Case D (Sparse Dataset)** | $< 20$ total valid records | None (`score: null`) | N/A | N/A | Triggers honest fallback per `NORM-05` (no fabrication). |
 
-  - Output payload contract:
-    ```typescript
-    export interface BrainrotScoreResult {
-      score: number | null; // null if < 20 records
-      tier: "Monk" | "Casual" | "Slime Brain" | "Deep Fried" | "Digital Zombie" | "Unranked";
-      confidence: "high" | "medium" | "low";
-      subscores: {
-        lateNight: number | null; // null when uncomputable
-        repetition: number | null;
-        velocity: number | null;
-      };
-      dataQuality: {
-        totalRecords: number;
-        validRecords: number;
-        missingTimestampCount: number;
-        timestampValidityRate: number;
-        isDegraded: boolean;
-        degradedNotice?: string;
-      };
-    }
+  - Output payload contract (validated at runtime via `BrainrotScoreResultSchema` in `src/schemas/roast.js`):
+    ```javascript
+    /**
+     * @typedef {Object} BrainrotScoreResult
+     * @property {number | null} score - null if < 20 records
+     * @property {"Monk" | "Casual" | "Slime Brain" | "Deep Fried" | "Digital Zombie" | "Unranked"} tier
+     * @property {"high" | "medium" | "low"} confidence
+     * @property {{ lateNight: number | null, repetition: number | null, velocity: number | null }} subscores
+     * @property {{ totalRecords: number, validRecords: number, missingTimestampCount: number, timestampValidityRate: number, isDegraded: boolean, degradedNotice?: string }} dataQuality
+     */
     ```
   — **Reversibility:** reversible.
 
@@ -111,11 +101,11 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
 - **D-12 (Comedic Archetype):** "The 3 AM Productivity Goblin" — synthetic persona combining late-night self-help/productivity videos, repeated gaming speedruns, long ambient/lo-fi loops, rapid-fire meme binges, contrasting topic clusters (productivity vs gaming vs memes), and at least 2 repeated video titles with realistic play counts. Internally consistent with timestamps, creator concentration, replay counts, and deterministic Brainrot score.
   — **Reversibility:** reversible.
 - **D-13 (Canonical Schema Defined in Phase 1 — No Interim Throwaways):**
-  - Phase 1 defines the canonical TypeScript interfaces and Zod schema in `src/types/roast.ts` matching requirement `AI-03` exactly (`brainrotScore`, `viewingArchetype`, `roastSummary`, `roasts` array with style/joke/evidence, `redFlags`, `finalVerdict`, `cardPayload`).
+  - Phase 1 defines the canonical Zod schema and runtime validators in `src/schemas/roast.js` matching requirement `AI-03` exactly (`brainrotScore`, `viewingArchetype`, `roastSummary`, `roasts` array with style/joke/evidence, `redFlags`, `finalVerdict`, `cardPayload`).
   - Phase 1 does NOT invent a separate or interim demo schema. The bundled demo report uses the final Phase 2 schema contract from day one.
 - **D-14 (Dual Fixture Architecture):**
   - Synthetic Takeout JSON fixture (`fixtures/synthetic-takeout.json`) containing 300–500 records (spanning 60–90 days, ~60KB) for streaming pipeline and normalizer tests.
-  - Pre-computed normalized profile module (`fixtures/demo-profile.ts`) matching the canonical schema for the zero-latency demo endpoint without calling Gemini or reparsing JSON on each request.
+  - Pre-computed normalized profile module (`fixtures/demo-profile.js`) matching the canonical schema for the zero-latency demo endpoint without calling Gemini or reparsing JSON on each request.
   - Automated test asserts that streaming the synthetic fixture through the normalizer yields matching metrics to the precomputed profile.
   — **Reversibility:** costly — locks schema timing and dual-fixture sync.
 
@@ -143,7 +133,7 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
 ## Existing Code Insights
 
 ### Reusable Assets
-- None (brand new repository, Phase 1 establishes the initial TypeScript codebase).
+- None (brand new repository, Phase 1 establishes the initial plain JavaScript (ES modules) codebase).
 
 ### Established Patterns
 - Zero-database and zero disk writes architecture: ephemeral RAM processing only.

@@ -6,10 +6,12 @@
 
 ## 1. Backend & Runtime
 
-* **Selected:** **Node.js (TypeScript) + Fastify (or Express with streaming parser)**
-  * *Why:* Native stream handling for large file uploads (`watch-history.json` can be 10MB–100MB+), excellent JSON schema validation (`zod`), lightweight, instant local startup.
+* **Selected:** **Node.js (plain JavaScript ES modules) + Fastify**
+  * *Why:* Native stream handling for large file uploads (`watch-history.json` can be 10MB–100MB+), excellent JSON schema validation (`zod`), lightweight, instant local startup, zero compilation step.
+  * *Frontend Stack:* React + Vite + plain JavaScript and JSX (`.jsx`, `.js`).
   * *Alternatives Rejected:*
-    * Python (FastAPI): Good, but TypeScript provides unified typing between backend schemas and future React/Vite frontend.
+    * TypeScript: Removed to eliminate build toolchain complexity, compilation steps, and type-definition mismatches. Runtime correctness is strictly validated using Zod.
+    * Python (FastAPI): Good, but Node.js provides a unified JavaScript language stack across backend and React/Vite frontend.
     * Rust/Go: Unnecessary development overhead for an MVP.
 
 ---
@@ -37,5 +39,5 @@
 
 ## 4. Testing & Validation
 
-* **Validation:** `zod` for request payloads, environment variables, and LLM output parsing.
-* **Testing:** `vitest` for fast, lightweight unit and integration tests (testing Takeout ingestion with synthetic fixtures, prompt formatting, scoring algorithms, and error states).
+* **Validation:** `zod` for request payloads, environment variables, Takeout records, and LLM output parsing (used natively in JavaScript).
+* **Testing:** `vitest` for fast, lightweight unit and integration tests running plain JavaScript ESM test files (testing Takeout ingestion with synthetic fixtures, prompt formatting, scoring algorithms, and error states).
