@@ -14,6 +14,11 @@ export function getDemoRoastProfile() {
 }
 
 /**
+ * Alias for getDemoRoastProfile
+ */
+export const loadDemoProfile = getDemoRoastProfile;
+
+/**
  * Returns the pre-computed normalized statistics for the demo profile
  *
  * @returns {import('../schemas/takeout.js').NormalizedViewingProfile}

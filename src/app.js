@@ -1,20 +1,33 @@
 import Fastify from 'fastify';
 import fastifyMultipart from '@fastify/multipart';
+import { healthRoutes } from './routes/health.js';
+import { roastRoutes } from './routes/roast.js';
+import { fastifyErrorHandler } from './utils/error-handler.js';
 
 /**
  * Fastify application factory
- * Configured for zero-disk-write streaming ingestion (PRIV-01, PRIV-02, D-11)
+ * Configured for zero-disk-write streaming ingestion, security headers, and error sanitization (PRIV-01, PRIV-02, SEC-01, SEC-02)
  *
- * @param {import('fastify').FastifyServerOptions} opts
+ * @param {import('fastify').FastifyServerOptions & { roastGeneratorService?: any, googleOAuthService?: any }} opts
  * @returns {import('fastify').FastifyInstance}
  */
 export function buildApp(opts = {}) {
+  const { roastGeneratorService, googleOAuthService, ...fastifyOpts } = opts;
+
   const app = Fastify({
     logger: false,
-    ...opts
+    ...fastifyOpts
   });
 
-  // Register multipart strictly with zero temporary disk spooling
+  // Attach injected services if supplied
+  if (roastGeneratorService) {
+    app.roastGeneratorService = roastGeneratorService;
+  }
+  if (googleOAuthService) {
+    app.googleOAuthService = googleOAuthService;
+  }
+
+  // 1. Register multipart strictly in streaming memory mode without disk spooling (PRIV-02, API-02)
   app.register(fastifyMultipart, {
     attachFieldsToBody: false,
     limits: {
@@ -22,14 +35,21 @@ export function buildApp(opts = {}) {
     }
   });
 
-  // Health check route
-  app.get('/api/health', async () => {
-    return {
-      status: 'ok',
-      service: 'yt-roast',
-      storage: 'zero-persistence-in-memory'
-    };
+  // 2. Global Security Headers: Ensure all /api/roast responses enforce no-store caching (SEC-01)
+  app.addHook('onSend', async (request, reply) => {
+    if (request.url.startsWith('/api/roast')) {
+      reply.header('Cache-Control', 'no-store, private, max-age=0');
+      reply.header('Pragma', 'no-cache');
+      reply.header('Surrogate-Control', 'no-store');
+    }
   });
+
+  // 3. Global Sanitized Error Handler (SEC-02, PRIV-04)
+  app.setErrorHandler(fastifyErrorHandler);
+
+  // 4. Register Route Plugins (API-01)
+  app.register(healthRoutes);
+  app.register(roastRoutes);
 
   return app;
 }
