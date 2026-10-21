@@ -1,9 +1,9 @@
 ---
 phase: "02"
 slug: "gemini-flash-ai-roast-engine-structured-validation"
-status: draft
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-10-21"
 ---
 
@@ -38,12 +38,12 @@ created: "2026-10-21"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | `AI-01` | — | Zero TypeScript / database dependencies | unit | `npm test` | ❌ W0 | ⏳ pending |
-| 02-01-02 | 01 | 1 | `AI-03`, `AI-04` | — | Canonical schema, min 4 jokes, 4 styles, evidence grounding | unit | `npm test -- tests/unit/prompt-builder.test.js` | ❌ W0 | ⏳ pending |
-| 02-01-03 | 01 | 1 | `PRIV-03`, `AI-04` | — | PII/URL/timestamp purging, 4 KB hard ceiling, score injection | unit | `npm test -- tests/unit/prompt-builder.test.js` | ❌ W0 | ⏳ pending |
-| 02-02-01 | 02 | 2 | `AI-05`, `PRIV-03` | — | Error hierarchy sanitizing API keys, prompts, and evidence | unit | `npm test -- tests/integration/roast-generator.test.js` | ❌ W0 | ⏳ pending |
-| 02-02-02 | 02 | 2 | `AI-01`, `AI-02`, `AI-05` | — | Service interface, structured output, 15s abort controller, score immutability | integration | `npm test -- tests/integration/roast-generator.test.js` | ❌ W0 | ⏳ pending |
-| 02-02-03 | 02 | 2 | `TEST-03`, `AI-01`, `AI-05` | — | Mocked Gemini suite, consent enforcement, timeouts, 429s | integration | `npm test -- tests/integration/roast-generator.test.js` | ❌ W0 | ⏳ pending |
+| 02-01-01 | 01 | 1 | `AI-01` | — | Zero TypeScript / database dependencies | unit | `npm test` | ✅ | ✅ green |
+| 02-01-02 | 01 | 1 | `AI-03`, `AI-04` | — | Canonical schema, min 4 jokes, 4 styles, evidence grounding | unit | `npm test -- tests/unit/prompt-builder.test.js` | ✅ | ✅ green |
+| 02-01-03 | 01 | 1 | `PRIV-03`, `AI-04` | — | PII/URL/timestamp purging, 4 KB hard ceiling, score injection | unit | `npm test -- tests/unit/prompt-builder.test.js` | ✅ | ✅ green |
+| 02-02-01 | 02 | 2 | `AI-05`, `PRIV-03` | — | Error hierarchy sanitizing API keys, prompts, and evidence | unit | `npm test -- tests/integration/roast-generator.test.js` | ✅ | ✅ green |
+| 02-02-02 | 02 | 2 | `AI-01`, `AI-02`, `AI-05` | — | Service interface, structured output, 15s abort controller, score immutability | integration | `npm test -- tests/integration/roast-generator.test.js` | ✅ | ✅ green |
+| 02-02-03 | 02 | 2 | `TEST-03`, `AI-01`, `AI-05` | — | Mocked Gemini suite, consent enforcement, timeouts, 429s | integration | `npm test -- tests/integration/roast-generator.test.js` | ✅ | ✅ green |
 
 *Status: ⏳ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,8 +51,8 @@ created: "2026-10-21"
 
 ## Wave 0 Requirements
 
-- [ ] `@google/genai` added to `package.json` dependencies
-- [ ] `tests/helpers/mock-gemini.js` — Mock Gemini fixtures and generator helper
+- [x] `@google/genai` added to `package.json` dependencies
+- [x] `tests/helpers/mock-gemini.js` — Mock Gemini fixtures and generator helper
 
 ---
 
