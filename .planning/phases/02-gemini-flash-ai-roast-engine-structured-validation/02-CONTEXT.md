@@ -43,6 +43,7 @@ All implementations strictly adhere to zero database persistence (`PRIV-01`), ze
     - Target payload size: ~1.5–3 KB.
     - Strict hard ceiling: **4,096 bytes (4 KB)** for the assembled prompt text.
     - Defensive length clamping: Every individual video title and creator name is clamped to a maximum of 80 characters before prompt interpolation to eliminate prompt bloat from abnormally long titles.
+    - Explicit Measurement & Rejection: The serialized prompt payload is measured (`Buffer.byteLength(prompt, 'utf8')`). If the assembled prompt text exceeds 4,096 bytes even after initial clamping, the operation is rejected immediately with a `PayloadTooLargeError` (`code: 'PROMPT_TOO_LARGE'`) before making any outbound Gemini call.
   - Data Purging (`PRIV-03`):
     - Zero user profile names, Google account IDs, email addresses.
     - Zero channel URLs or video URLs (`titleUrl` is completely stripped).
