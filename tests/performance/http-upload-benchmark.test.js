@@ -95,23 +95,6 @@ describe('HTTP Multipart Streaming Benchmark & Zero-Disk Acceptance Test (TEST-0
       // 1. Initialize multi-layer zero-disk spies before server invocation
       zeroDisk = setupZeroDiskSpies();
 
-      // Force GC before measuring baseline if exposed
-      if (typeof global.gc === 'function') {
-        global.gc();
-      }
-
-      // 2. Measure baseline memory usage
-      const baselineHeap = process.memoryUsage().heapUsed;
-      let peakHeapUsed = baselineHeap;
-
-      // Monitor memory periodically during HTTP streaming to capture true peak heap
-      const memorySampler = setInterval(() => {
-        const currentHeap = process.memoryUsage().heapUsed;
-        if (currentHeap > peakHeapUsed) {
-          peakHeapUsed = currentHeap;
-        }
-      }, 50);
-
       // 3. Mock roast report grounded in synthetic stream creator names
       const benchmarkMockRoast = {
         brainrotScore: 50,
@@ -164,11 +147,28 @@ describe('HTTP Multipart Streaming Benchmark & Zero-Disk Acceptance Test (TEST-0
       await app.listen({ port: 0, host: '127.0.0.1' });
       const port = app.server.address().port;
 
-      // 4. Create 52MB streaming multipart payload
-      const boundary = '----BenchmarkBoundary1234567890';
-      const multipartStream = createSyntheticMultipartStream(52 * 1024 * 1024, boundary);
+      // Force GC before measuring baseline if exposed
+      if (typeof global.gc === 'function') {
+        global.gc();
+      }
 
-      // 5. Stream HTTP multipart upload over real HTTP socket
+      // 4. Measure baseline memory usage of ready server
+      const baselineHeap = process.memoryUsage().heapUsed;
+      let peakHeapUsed = baselineHeap;
+
+      // Monitor memory periodically during HTTP streaming to capture true peak heap
+      const memorySampler = setInterval(() => {
+        const currentHeap = process.memoryUsage().heapUsed;
+        if (currentHeap > peakHeapUsed) {
+          peakHeapUsed = currentHeap;
+        }
+      }, 50);
+
+      // 5. Create 51MB (50MB+) streaming multipart payload per TEST-04
+      const boundary = '----BenchmarkBoundary1234567890';
+      const multipartStream = createSyntheticMultipartStream(51 * 1024 * 1024, boundary);
+
+      // 6. Stream HTTP multipart upload over real HTTP socket
       const { statusCode, headers, body } = await new Promise((resolve, reject) => {
         const req = http.request(
           {
