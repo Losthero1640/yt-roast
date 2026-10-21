@@ -1,13 +1,13 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 2
-current_phase_name: Gemini Flash AI Roast Engine & Structured Validation
-status: complete
-stopped_at: Phase 2 complete and fully verified (47/47 tests green across 8 suites)
-last_updated: "2026-10-21T21:41:00.000Z"
+current_phase: 3
+current_phase_name: Dual-Mode REST API, Live Google OAuth & Privacy Hardening
+status: planning
+stopped_at: Phase 3 plans prepared and awaiting review (03-01 and 03-02)
+last_updated: "2026-10-21T21:48:30.000Z"
 last_activity: 2026-10-21
-last_activity_desc: Completed Phase 2 execution with @google/genai, size-capped prompt builder (<4KB hard ceiling), RoastGeneratorService with 15s timeout, deterministic score locking, and comprehensive mocked Vitest suite.
-state_head: 9980272a9de1210ea82136e053f3607736340dc0
+last_activity_desc: Completed Phase 3 planning artifacts (03-CONTEXT.md, 03-01-PLAN.md, 03-02-PLAN.md, 03-VALIDATION.md) for REST routes, streaming upload, Mode 1 OAuth flow, and HTTP memory benchmark.
+state_head: 8043aae83004990c4b3fc007912c91e61a2e4525
 progress:
   total_phases: 3
   completed_phases: 2
@@ -27,10 +27,10 @@ See: [.planning/PROJECT.md](file:///c:/Users/ayush/OneDrive/Documents/projects/y
 
 ## Current Position
 
-Phase: 2 of 3 (Gemini Flash AI Roast Engine & Structured Validation) — COMPLETE  
-Plan: 02-01 & 02-02 complete (4/4 plans completed across Phases 1 & 2)  
-Status: Phase 2 complete and verified, ready for Phase 3  
-Last activity: 2026-10-21 — Executed Phase 2 with @google/genai SDK, prompt builder with PII stripping, hard 4KB ceiling, RoastGeneratorService with 15s timeout, deterministic score locking, and 47/47 tests green.
+Phase: 3 of 3 (Dual-Mode REST API, Live Google OAuth & Privacy Hardening)  
+Plan: 03-01 & 03-02 prepared, ready for review  
+Status: Awaiting user review and plan approval before execution  
+Last activity: 2026-10-21 — Prepared Phase 3 context and plans with Fastify REST routes, Mode 2 multipart streaming, Mode 1 ephemeral OAuth flow, global no-store caching, and HTTP 50MB+ streaming memory benchmark.
 
 Progress: [███████░░░] 66%
 
@@ -43,20 +43,16 @@ Progress: [███████░░░] 66%
 ## Key Decisions & Architecture Log
 
 - **Phase 1 Complete:** Streaming Takeout parser, UTF-8 resilience, normalizer, deterministic Brainrot scoring, 52MB memory benchmark (<30MB incremental heap, zero disk writes).
-- **Phase 2 Complete:**
-  - `@google/genai` (^2.30.0) SDK integration with configurable `GEMINI_MODEL` (`gemini-2.5-flash`).
-  - Size-capped prompt builder under strict 4,096-byte hard ceiling with 80-char entity clamping and `PayloadTooLargeError`.
-  - PII stripping (`PRIV-03`): zero URLs, zero exact ISO timestamps, zero Google account IDs, zero bulk logs.
-  - Service-level consent gate (`ConsentRequiredError`).
-  - Strict structured JSON output (`responseSchema`) with Zod validation (`EnhancedRoastReportSchema`, $\ge 4$ jokes, 4 styles, 3–5 red flags).
-  - Deterministic score immutability: Phase 1 Brainrot score overrides any LLM score drift.
-  - Joke grounding verification (`validateJokeGrounding`) ensuring specific jokes cite real observed evidence.
-  - 15-second `AbortController` cancellation and resource cleanup (`clearTimeout`).
-  - HTTP 429 rate limit mapping to `GeminiRateLimitError`.
-  - Error sanitization: zero leakage of API keys, full prompts, or sensitive evidence.
+- **Phase 2 Complete:** `@google/genai` Flash integration, size-capped prompt builder (<4KB hard ceiling), RoastGeneratorService with 15s timeout, deterministic score locking, and comprehensive mocked Vitest suite.
+- **Phase 3 Planned:**
+  - Fastify REST API routes (`/api/roast/upload`, `/api/roast/demo`, `/api/roast/oauth/url`, `/api/roast/oauth/callback`, `/api/health`).
+  - Mode 2 (Takeout Upload): Streaming multipart ingestion directly to parser with 100MB body limit (`HTTP 413`) and pre-upload user consent gate (`API-05`).
+  - Mode 1 (Quick Roast): Google OAuth 2.0 flow via lightweight native `fetch` with ephemeral token lifecycle (tokens discarded immediately, zero persistence) and prominent disclaimer badge (`API-04`).
+  - Privacy & Security: Mandatory `Cache-Control: no-store, private, max-age=0` (`SEC-01`), global error handler sanitizing exceptions and stripping stack traces/tokens (`SEC-02`), and log redaction (`PRIV-04`).
+  - HTTP-layer memory benchmark & zero-disk acceptance test on 50MB+ fixture (`TEST-04`).
 
 ## Session
 
-**Last session:** 2026-10-21T21:41:00.000Z
-**Stopped at:** Phase 2 complete and verified
-**Resume file:** .planning/phases/02-gemini-flash-ai-roast-engine-structured-validation/02-02-SUMMARY.md
+**Last session:** 2026-10-21T21:48:30.000Z
+**Stopped at:** Phase 3 plans prepared and awaiting review
+**Resume file:** .planning/phases/03-dual-mode-rest-api-live-google-oauth-privacy-hardening/03-01-PLAN.md
