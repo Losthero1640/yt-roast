@@ -12,66 +12,102 @@ Phase 1 delivers the foundational TypeScript backend, Fastify HTTP server setup,
 <decisions>
 ## Implementation Decisions
 
-### 1. Brainrot Scoring Algorithm
-- **D-01 (Formula):** Deterministic multi-factor weighted composite:
-  - **35% Late-Night Binge Ratio:** Proportion of views occurring between 12:00 AM and 5:00 AM over total valid-timestamp views.
-  - **35% Creator & Title Repetition:** 20% allocated to top-5 creator watch concentration + 15% allocated to identical video title re-watches (titles with >=2 plays).
-  - **30% Watch Velocity & Clustering:** Percentage of views occurring in rapid-fire succession within short configurable session intervals (<15–30 minutes), signaling doomscrolling and rabbit-holing.
-  — **Reversibility:** reversible — weights and thresholds are isolated constants in the normalizer config.
+### 1. Brainrot Scoring Algorithm & Precise Subscores
+- **D-01 (Formulas & Weighting):** The deterministic 0–100 Brainrot score is calculated from three normalized 0–100 subscores:
+  $$\text{Score} = \text{round}(S_{\text{late}} \times 0.35 + S_{\text{rep}} \times 0.35 + S_{\text{vel}} \times 0.30)$$
+  - **Late-Night Subscore ($S_{\text{late}}$, 35% weight):**
+    - $R_{\text{late}} = (\text{views between 12:00 AM and 4:59 AM}) / (\text{total valid-timestamp views})$
+    - Normal baseline $\le 5\%$, severe threshold $\ge 25\%$:
+    - $S_{\text{late}} = \min(100, \text{round}((R_{\text{late}} / 0.25) \times 100))$
+  - **Creator & Title Repetition Subscore ($S_{\text{rep}}$, 35% weight):**
+    - Composed of 20% Top-5 Creator concentration + 15% Title Re-watches:
+    - $C_{\text{top5}} = (\text{views of top 5 creators}) / (\text{total valid views})$. Normal $\le 15\%$, high $\ge 50\%$:
+      $S_{\text{creator}} = \min(100, \max(0, \text{round}(((C_{\text{top5}} - 0.15) / 0.35) \times 100)))$
+    - $T_{\text{rep}} = (\sum(\text{playCount} - 1) \text{ for titles with } \ge 2 \text{ plays}) / (\text{total valid views})$. Normal $\le 2\%$, high $\ge 12\%$:
+      $S_{\text{title}} = \min(100, \text{round}((T_{\text{rep}} / 0.12) \times 100))$
+    - Combined: $S_{\text{rep}} = \text{round}((S_{\text{creator}} \times 20 + S_{\text{title}} \times 15) / 35)$
+  - **Watch Velocity Subscore ($S_{\text{vel}}$, 30% weight):**
+    - $V_{\text{cluster}} = (\text{views watched within } \le 20 \text{ min of previous view}) / (\text{total valid-timestamp views} - 1)$
+    - Normal $\le 15\%$, severe doomscrolling $\ge 60\%$:
+    - $S_{\text{vel}} = \min(100, \max(0, \text{round}(((V_{\text{cluster}} - 0.15) / 0.45) \times 100)))$
+  — **Reversibility:** reversible — all normalization coefficients and thresholds are isolated constants.
 - **D-02 (Comedic Tiers):** Normalizer assigns a 5-tier comedic classification based on the 0–100 score:
   - `0–19`: **Monk**
   - `20–44`: **Casual**
   - `45–69`: **Slime Brain**
   - `70–89`: **Deep Fried**
   - `90–100`: **Digital Zombie**
-  — **Reversibility:** reversible — tier boundaries and labels are deterministic string mappings.
-- **D-03 (Missing Data & Graceful Degradation):** Graceful degradation with explicit data-quality tracking:
-  - Exclude records with missing or unparseable timestamps from time-based calculations, while retaining them for valid non-time metrics (creator concentration, replay counts).
-  - Calculate each metric only when sufficient valid data exists, and renormalize weights across available metrics only.
-  - If a metric lacks sufficient data, mark it unavailable (`null` with metadata flag) rather than treating it as zero (never infer that late-night viewing is absent merely because timestamps are missing).
-  - Include data-quality flags in normalizer output (`dataQualityFlags: { hasValidTimestamps: boolean, missingTimestampCount: number, degradedMetrics: string[] }`).
-  - Score stays 100% deterministic.
-  - Test empty histories, malformed timestamps, duplicate records, and datasets with insufficient valid timestamps.
-  — **Reversibility:** reversible — clean defensive logic in normalization reducer.
+  — **Reversibility:** reversible.
+- **D-03 (Missing Data & Explicit Quality / Confidence Tracking):**
+  - Distinguish a genuinely low score from a score calculated on incomplete evidence.
+  - The scoring output structure must include:
+    ```typescript
+    export interface BrainrotScoreResult {
+      score: number;
+      tier: "Monk" | "Casual" | "Slime Brain" | "Deep Fried" | "Digital Zombie";
+      confidence: "high" | "medium" | "low";
+      subscores: {
+        lateNight: number | null;
+        repetition: number;
+        velocity: number | null;
+      };
+      dataQuality: {
+        totalRecords: number;
+        validRecords: number;
+        missingTimestampCount: number;
+        timestampValidityRate: number;
+        isDegraded: boolean;
+        degradedNotice?: string;
+      };
+    }
+    ```
+  - If timestamps are missing/insufficient (<20 valid timestamps), $S_{\text{late}}$ and $S_{\text{vel}}$ are `null`, weights are renormalized over $S_{\text{rep}}$, `confidence` is forced to `"low"`, and `degradedNotice` explicitly states that time metrics were omitted rather than assuming zero late-night activity.
+  — **Reversibility:** reversible.
 
 ### 2. High-Signal Evidence Extraction Limits
 - **D-04 (Top Creators):** Dynamic tiering: Top 5 creators highlighted with exact view counts and share percentages; ranks 6–15 listed as channel names only.
-  — **Reversibility:** reversible — controls array slicing and shaping into the prompt context.
+  — **Reversibility:** reversible.
 - **D-05 (Repeated Video Titles):** Extract Top 5 most-repeated video titles with exact play counts, requiring at least 3 plays per title to qualify. Also include aggregate count of replay events across history, calculated deterministically as sum of `(play count - 1)` for each distinct normalized video title with >= 2 plays. Titles below the 3-play threshold are excluded from the detailed list. Capped and strictly size-bounded.
-  — **Reversibility:** reversible — filtering thresholds in evidence extractor.
+  — **Reversibility:** reversible.
 - **D-06 (Late-Night Titles):** Extract at most Top 5 distinct late-night video titles watched between 12:00 AM and 5:00 AM. Deterministic selection priority:
   1. Repeated titles within the late-night window
   2. Titles from the peak goblin hours (2:00 AM–4:00 AM)
   3. Other late-night titles
   Include derived local viewing-hour context (e.g., "watched around 2 AM"), never exact ISO timestamps. No duplicate video titles. If fewer than 5 valid items exist, return fewer.
-  — **Reversibility:** reversible — sorting and sampling rules in evidence extractor.
+  — **Reversibility:** reversible.
 - **D-07 (Topic Clusters & Rabbit Holes):** Hybrid session clustering:
-  - Deterministically cluster viewing records into rapid-fire sessions using timestamps with a documented, configurable session-gap threshold (e.g., 15–30 minutes).
+  - Deterministically cluster viewing records into rapid-fire sessions using timestamps with a documented, configurable session-gap threshold (20 minutes).
   - Extract candidate topic and creator patterns from selected high-signal titles and creator names using lightweight keyword heuristics without requiring a full taxonomy.
   - Pass only selected titles, creator names, session-level summaries, and derived topic candidates to Gemini (Phase 2) for thematic synthesis and contrasting pairings. No hallucinated connections outside supplied session evidence.
-  — **Reversibility:** reversible — modular session segmentation function.
+  — **Reversibility:** reversible.
 
-### 3. Takeout Schema Resilience & Streaming Architecture
+### 3. Takeout Schema Resilience & Zero-Disk Streaming Pipeline
 - **D-08 (Title & Creator Normalization):** Defensive normalization while preserving original values in memory for debugging only. Strip leading `"Watched "` case-insensitively only when it is a known Takeout activity prefix followed by whitespace; preserve remaining title exactly, including Unicode and non-English text. Never reject exports based on language. Extract creator names from `subtitles` when valid; fallback to `"Unknown Channel"` rather than crashing.
-  — **Reversibility:** reversible — regex title cleaner and extractor helper.
+  — **Reversibility:** reversible.
 - **D-09 (Deleted & Removed Video Placeholders):** Explicit, case-insensitive allowlist of recognized Takeout placeholder forms (`"Watched a video that has been removed"`, `"Watched a video that is no longer available"`, `"Watched a private video"`). Exclude confirmed placeholders from title/creator/time evidence. Track their count as a separate aggregate metric (`deletedVideoCount`). Preserve legitimate titles that merely contain words like "removed" or "private".
-  — **Reversibility:** reversible — allowlist regex/set filter in streaming parser.
+  — **Reversibility:** reversible.
 - **D-10 (Malformed JSON & Truncation):** Fast-fail on truncated or syntactically corrupted JSON. Abort parsing immediately, clean up streams/sockets, and return a clear user-friendly error (`INVALID_JSON`). Do not write partial history to disk or retain partial results.
-  — **Reversibility:** reversible — stream error handler in parser pipeline.
-- **D-11 (Stream Pipeline & Memory Budget):** Genuinely incremental streaming JSON parser (`stream-json`) using an online reducer with backpressure. Never load full upload or parsed history into memory; keep only running aggregates and capped evidence. Zero disk writes throughout request lifecycle (multipart stream directly into parser; verify with fs write interception tests). Bounded heap (<30MB incremental, <50MB peak heap on 50MB+ fixture).
-  — **Reversibility:** costly — changing stream ingestion architecture would touch core pipeline and test harnesses.
+  — **Reversibility:** reversible.
+- **D-11 (Zero-Disk Multipart & Stream Pipeline Architecture):**
+  - **Multipart Configuration:** `@fastify/multipart` is configured with `attachFieldsToBody: false` and zero disk-temp adapters. The file stream is piped directly into `stream-json` parser via `stream.pipeline()`. Using a streaming JSON parser alone does not prevent disk writes; multipart middleware must never spool to disk.
+  - **Memory Bounds & 50MB+ Benchmark:** Incremental streaming JSON parser (`stream-json`) using an online reducer with backpressure. Never load full upload or parsed history into memory.
+  - **Automated Memory & Disk Verification:** Dedicated test suite executes against a **50MB+ synthetic fixture** asserting:
+    1. Incremental heap usage $< 30$ MB (`peakHeap - baselineHeap < 30MB`)
+    2. Peak heap usage $< 50$ MB
+    3. Filesystem-write interception (`vi.spyOn(fs, 'writeFile')`, `createWriteStream`, etc.) verifying zero disk calls.
+  — **Reversibility:** costly — core streaming architectural contract.
 
-### 4. Bundled Demo Profile Archetype
+### 4. Bundled Demo Profile Archetype & Schema Timing
 - **D-12 (Comedic Archetype):** "The 3 AM Productivity Goblin" — synthetic persona combining late-night self-help/productivity videos, repeated gaming speedruns, long ambient/lo-fi loops, rapid-fire meme binges, contrasting topic clusters (productivity vs gaming vs memes), and at least 2 repeated video titles with realistic play counts. Internally consistent with timestamps, creator concentration, replay counts, and deterministic Brainrot score.
-  — **Reversibility:** reversible — synthetic fixture file.
-- **D-13 (Dual Fixture Architecture):**
+  — **Reversibility:** reversible.
+- **D-13 (Canonical Schema Defined in Phase 1 — No Interim Throwaways):**
+  - Phase 1 defines the canonical TypeScript interfaces and Zod schema in `src/types/roast.ts` matching requirement `AI-03` exactly (`brainrotScore`, `viewingArchetype`, `roastSummary`, `roasts` array with style/joke/evidence, `redFlags`, `finalVerdict`, `cardPayload`).
+  - Phase 1 does NOT invent a separate or interim demo schema. The bundled demo report uses the final Phase 2 schema contract from day one.
+- **D-14 (Dual Fixture Architecture):**
   - Synthetic Takeout JSON fixture (`fixtures/synthetic-takeout.json`) containing 300–500 records (spanning 60–90 days, ~60KB) for streaming pipeline and normalizer tests.
-  - Pre-computed normalized profile module (`fixtures/demo-profile.ts`) for the zero-latency demo endpoint.
-  - Automated test running the synthetic fixture through the real normalizer to assert that the pre-computed profile matches.
-  - Demo endpoint does NOT invoke Gemini or parse raw JSON on each request.
-  — **Reversibility:** reversible — fixture maintenance and test validator.
-- **D-14 (Schema Alignment):** Pre-baked demo roast report conforms 100% to the Phase 2 Zod roast schema (`brainrotScore`, `viewingArchetype`, `roastSummary`, `roasts` array with style/joke/evidence, `redFlags`, `finalVerdict`, `cardPayload`) so frontend and API consumers treat demo and live roasts identically.
-  — **Reversibility:** costly — aligns Phase 1 mock contract with Phase 2 LLM output schema.
+  - Pre-computed normalized profile module (`fixtures/demo-profile.ts`) matching the canonical schema for the zero-latency demo endpoint without calling Gemini or reparsing JSON on each request.
+  - Automated test asserts that streaming the synthetic fixture through the normalizer yields matching metrics to the precomputed profile.
+  — **Reversibility:** costly — locks schema timing and dual-fixture sync.
 
 ### Agent Discretion
 - Exact configuration of Fastify server plugins (logger levels, CORS setup, helmet headers) left to agent discretion following standard Node.js best practices.
