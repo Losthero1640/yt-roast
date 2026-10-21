@@ -209,6 +209,13 @@ export class TakeoutNormalizer {
       derivedHour: formatDerivedHour(item.peakHour)
     }));
 
+    // Viewing hours & late-night ratio (NORM-02, D-01)
+    const lateNightViews = this.hourBins.slice(0, 5).reduce((sum, count) => sum + count, 0);
+    const lateNightRatio =
+      this.validTimestampCount > 0
+        ? Number((lateNightViews / this.validTimestampCount).toFixed(4))
+        : 0;
+
     // Session clustering & rapid-fire ratio (D-07)
     const timestampIntervals = Math.max(0, this.validTimestampCount - 1);
     const rapidFireRatio =
@@ -250,6 +257,11 @@ export class TakeoutNormalizer {
         replayRatio
       },
       lateNightTitles,
+      viewingHours: {
+        lateNightViews,
+        lateNightRatio,
+        hourBins: [...this.hourBins]
+      },
       sessionClusters: {
         rapidFireCount: this.rapidFireCount,
         rapidFireRatio,

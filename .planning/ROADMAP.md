@@ -8,7 +8,7 @@ A condensed 3-phase journey to construct a privacy-first, backend-first MVP for 
 
 ## Phases
 
-- [ ] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — Node.js (plain JavaScript ES modules) backend foundation, streaming Takeout JSON parser, deleted-video filtering, UTF-8 normalization, deterministic Brainrot scoring, and demo profile loader.
+- [x] **Phase 1: Project Scaffolding & Takeout Stream Ingestion** — Node.js (plain JavaScript ES modules) backend foundation, streaming Takeout JSON parser, deleted-video filtering, UTF-8 normalization, deterministic Brainrot scoring, and demo profile loader.
 - [ ] **Phase 2: Gemini Flash AI Roast Engine & Structured Validation** — Gemini Flash integration with configurable model ID, prompt builder with PII stripping, schema enforcement (`responseSchema` + Zod), satirical guardrails, and error handling.
 - [ ] **Phase 3: Dual-Mode REST API, Live Google OAuth & Privacy Hardening** — Fastify REST endpoints (`/upload`, `/demo`, `/oauth`, `/health`), Mode 1 Quick Roast (OAuth likes/subs), `no-store` headers, sanitized errors, memory acceptance verification, and end-to-end acceptance tests.
 
@@ -29,8 +29,8 @@ A condensed 3-phase journey to construct a privacy-first, backend-first MVP for 
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: Project scaffolding, config, streaming Takeout JSON parser, deleted-video filter, and demo profile loader.
-- [ ] 01-02: Statistical normalizer, viewing-hour bins, deterministic Brainrot formula, and Vitest fixture test suite.
+- [x] 01-01: Project scaffolding, config, streaming Takeout JSON parser, deleted-video filter, and demo profile loader.
+- [x] 01-02: Statistical normalizer, viewing-hour bins, deterministic Brainrot formula, and Vitest fixture test suite.
 
 ---
 

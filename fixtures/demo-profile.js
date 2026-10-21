@@ -98,6 +98,10 @@ export const demoNormalizedProfile = {
     { title: 'Lofi Hip Hop Radio - Beats to Sleep/Study to', derivedHour: 'watched around 2 AM' },
     { title: 'The Science of Deep Work and Focus', derivedHour: 'watched around 4 AM' }
   ],
+  viewingHours: {
+    lateNightViews: 90,
+    lateNightRatio: 0.2616
+  },
   sessionClusters: {
     rapidFireCount: 128,
     rapidFireRatio: 0.373,

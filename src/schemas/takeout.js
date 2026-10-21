@@ -52,6 +52,11 @@ export const NormalizedViewingProfileSchema = z.object({
     title: z.string(),
     derivedHour: z.string()
   })),
+  viewingHours: z.object({
+    lateNightViews: z.number().int().nonnegative(),
+    lateNightRatio: z.number().min(0).max(1),
+    hourBins: z.array(z.number().int().nonnegative()).length(24).optional()
+  }).optional(),
   sessionClusters: z.object({
     rapidFireCount: z.number().int().nonnegative(),
     rapidFireRatio: z.number().min(0).max(1),
