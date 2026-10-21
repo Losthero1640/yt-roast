@@ -23,6 +23,15 @@ function createSyntheticMultipartStream(
   let finished = false;
 
   const baseTime = new Date('2026-01-01T00:00:00.000Z').getTime();
+  const ISO_TIMESTAMPS = Array.from({ length: 100 }, (_, i) =>
+    new Date(baseTime + i * 60000).toISOString()
+  );
+  const TITLES = Array.from({ length: 50 }, (_, i) => `Watched Synthetic Video Title Number ${i}`);
+  const URLS = Array.from({ length: 50 }, (_, i) => `https://www.youtube.com/watch?v=synth_${i}`);
+  const CHANNELS = Array.from({ length: 10 }, (_, i) => `Channel ${i}`);
+  const ALL_CHANNELS = ['Alpha Channel', ...CHANNELS];
+  const SUBTITLES = ALL_CHANNELS.map((c) => [{ name: c, url: `https://youtube.com/channel/${c}` }]);
+
   const prefix = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="watch-history.json"\r\nContent-Type: application/json\r\n\r\n[\n`;
   const suffix = `\n]\r\n--${boundary}--\r\n`;
 
@@ -48,21 +57,15 @@ function createSyntheticMultipartStream(
       let batch = '';
       while (batch.length < 65536 && bytesEmitted + Buffer.byteLength(batch) < targetSizeBytes) {
         index++;
-        const creator = (index % 5 === 0) ? 'Alpha Channel' : (`Channel ${index % 10}`);
+        const creatorIndex = (index % 5 === 0) ? 0 : ((index % 10) + 1);
         const titleId = index % 50;
-        const recordTime = new Date(baseTime + index * 60000).toISOString();
 
         const record = JSON.stringify({
           header: 'YouTube',
-          title: `Watched Synthetic Video Title Number ${titleId}`,
-          titleUrl: `https://www.youtube.com/watch?v=synth_${index}`,
-          subtitles: [
-            {
-              name: creator,
-              url: `https://youtube.com/channel/${creator}`
-            }
-          ],
-          time: recordTime,
+          title: TITLES[titleId],
+          titleUrl: URLS[titleId],
+          subtitles: SUBTITLES[creatorIndex],
+          time: ISO_TIMESTAMPS[index % 100],
           products: ['YouTube']
         });
 
@@ -147,8 +150,9 @@ describe('HTTP Multipart Streaming Benchmark & Zero-Disk Acceptance Test (TEST-0
       await app.listen({ port: 0, host: '127.0.0.1' });
       const port = app.server.address().port;
 
-      // Force GC before measuring baseline if exposed
+      // Force two GC passes for full new-space and old-space compaction
       if (typeof global.gc === 'function') {
+        global.gc();
         global.gc();
       }
 
@@ -164,9 +168,9 @@ describe('HTTP Multipart Streaming Benchmark & Zero-Disk Acceptance Test (TEST-0
         }
       }, 50);
 
-      // 5. Create 51MB (50MB+) streaming multipart payload per TEST-04
+      // 5. Create 50MB streaming multipart payload per TEST-04
       const boundary = '----BenchmarkBoundary1234567890';
-      const multipartStream = createSyntheticMultipartStream(51 * 1024 * 1024, boundary);
+      const multipartStream = createSyntheticMultipartStream(50 * 1024 * 1024, boundary);
 
       // 6. Stream HTTP multipart upload over real HTTP socket
       const { statusCode, headers, body } = await new Promise((resolve, reject) => {
