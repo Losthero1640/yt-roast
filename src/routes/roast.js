@@ -3,6 +3,7 @@ import { parseTakeoutStream, TakeoutParseError } from '../parser/takeout-stream-
 import { TakeoutNormalizer } from '../normalizer/takeout-normalizer.js';
 import { calculateBrainrotScore } from '../scoring/brainrot-calculator.js';
 import { RoastGeneratorService } from '../ai/roast-generator-service.js';
+import { GoogleOAuthService } from '../oauth/google-oauth-service.js';
 import { ConsentRequiredError } from '../ai/errors.js';
 
 /**
@@ -11,8 +12,9 @@ import { ConsentRequiredError } from '../ai/errors.js';
  * @param {import('fastify').FastifyInstance} app
  */
 export async function roastRoutes(app) {
-  // Pre-configured or injected RoastGeneratorService
+  // Pre-configured or injected services
   const roastService = app.roastGeneratorService || new RoastGeneratorService();
+  const oauthService = app.googleOAuthService || new GoogleOAuthService();
 
   /**
    * GET /api/roast/demo
@@ -75,5 +77,38 @@ export async function roastRoutes(app) {
     });
 
     return reply.status(200).send(roastResult);
+  });
+
+  /**
+   * GET /api/roast/oauth/url
+   * Generates Google OAuth authorization URL requesting youtube.readonly (API-01, API-03)
+   */
+  app.get('/api/roast/oauth/url', async (req) => {
+    const state = req.query?.state || 'state_' + Date.now();
+    const url = oauthService.getAuthorizationUrl({ state });
+    return { url, state };
+  });
+
+  /**
+   * GET /api/roast/oauth/callback
+   * Exchanges code and executes Mode 1 Quick Roast with ephemeral token lifecycle (API-01, API-03, API-04)
+   */
+  app.get('/api/roast/oauth/callback', async (req, reply) => {
+    const code = req.query?.code;
+    if (!code) {
+      return reply.status(400).send({
+        error: {
+          code: 'MISSING_CODE',
+          message: 'Missing OAuth authorization code in callback query parameter.'
+        }
+      });
+    }
+
+    const quickRoast = await oauthService.executeQuickRoast({
+      code,
+      roastGeneratorService: roastService
+    });
+
+    return reply.status(200).send(quickRoast);
   });
 }
