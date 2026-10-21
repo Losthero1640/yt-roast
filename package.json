@@ -1,0 +1,31 @@
+{
+  "name": "yt-roast",
+  "version": "1.0.0",
+  "description": "YouTube Roast AI - Privacy-first Takeout and OAuth roast generator",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "youtube",
+    "roast",
+    "ai",
+    "gemini",
+    "privacy-first"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/multipart": "^10.1.4",
+    "fastify": "^5.12.7",
+    "stream-chain": "^4.2.6",
+    "stream-json": "^3.7.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}
