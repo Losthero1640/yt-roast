@@ -21,7 +21,7 @@ const host = process.env.HOST || '0.0.0.0';
 // Initialize services with environment configuration
 const roastGeneratorService = new RoastGeneratorService({
   apiKey: process.env.GEMINI_API_KEY,
-  model: process.env.GEMINI_MODEL || 'gemini-3.8-flash'
+  model: process.env.GEMINI_MODEL || 'gemini-3.5-flash'
 });
 
 const googleOAuthService = new GoogleOAuthService({

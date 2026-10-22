@@ -97,7 +97,7 @@ export class RoastGeneratorService {
    */
   constructor(options = {}) {
     this.apiKey = options.apiKey || process.env.GEMINI_API_KEY;
-    this.model = options.model || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    this.model = options.model || process.env.GEMINI_MODEL || 'gemini-3.5-flash';
     this.timeoutMs =
       options.timeoutMs ??
       (process.env.GEMINI_TIMEOUT_MS
@@ -105,7 +105,7 @@ export class RoastGeneratorService {
         : process.env.NODE_ENV === 'test'
           ? 15000
           : 60000);
-    this.fallbackModels = options.fallbackModels || ['gemini-3.7-flash', 'gemini-3.5-flash'];
+    this.fallbackModels = options.fallbackModels || ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.8-flash'];
 
     if (options.client) {
       this.client = options.client;
