@@ -1,7 +1,0 @@
-{
-  "mode": "interactive",
-  "granularity": "standard",
-  "parallelization": false,
-  "commit_docs": true,
-  "runtime": "antigravity"
-}

@@ -1,0 +1,25 @@
+{
+  "name": "yt-roast-backend",
+  "version": "1.0.0",
+  "description": "YouTube Roast AI - Fastify backend service",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^10.1.4",
+    "@google/genai": "^2.30.0",
+    "fastify": "^5.12.7",
+    "stream-chain": "^4.2.6",
+    "stream-json": "^3.7.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}
