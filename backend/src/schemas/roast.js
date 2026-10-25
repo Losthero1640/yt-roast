@@ -142,15 +142,32 @@ export function validateJokeGrounding(report, allowedEvidence = {}) {
   for (let i = 0; i < report.roasts.length; i++) {
     const joke = report.roasts[i];
     if (joke.style === 'specific') {
-      const ref = (joke.referencedItem || '').trim().toLowerCase();
-      if (!ref) {
+      const rawRef = (joke.referencedItem || '').trim();
+      if (!rawRef) {
         errors.push(`Specific joke at index ${i} has empty referencedItem.`);
         continue;
       }
 
-      // Check if ref matches any allowed creator or title (exact match or substring match)
-      const matchesCreator = normalizedCreators.some((c) => c.includes(ref) || ref.includes(c));
-      const matchesTitle = normalizedTitles.some((t) => t.includes(ref) || ref.includes(t));
+      const ref = rawRef.toLowerCase();
+      // Clean off quotes, ellipsis and trailing punctuation (e.g. from clampText)
+      const cleanRef = ref
+        .replace(/^["'`]|["'`]$/g, '')
+        .replace(/[\.…\s]+$/, '')
+        .trim();
+
+      // Check if ref or cleanRef matches any allowed creator or title (exact match or substring match)
+      const matchesCreator = normalizedCreators.some(
+        (c) =>
+          c.includes(ref) ||
+          ref.includes(c) ||
+          (cleanRef.length >= 3 && (c.includes(cleanRef) || cleanRef.includes(c)))
+      );
+      const matchesTitle = normalizedTitles.some(
+        (t) =>
+          t.includes(ref) ||
+          ref.includes(t) ||
+          (cleanRef.length >= 3 && (t.includes(cleanRef) || cleanRef.includes(t)))
+      );
 
       if (!matchesCreator && !matchesTitle) {
         errors.push(

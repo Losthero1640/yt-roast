@@ -35,32 +35,52 @@ export function extractAllowedEvidence(profile = {}) {
   const creators = new Set();
   const titles = new Set();
 
+  const addCreator = (raw) => {
+    if (!raw || typeof raw !== 'string') return;
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed === 'Unknown Channel') return;
+    creators.add(trimmed);
+    creators.add(clampText(trimmed, 40));
+    creators.add(clampText(trimmed, 35));
+    creators.add(clampText(trimmed, 80));
+    const noEllipsis = trimmed.replace(/[\.…\s]+$/, '').trim();
+    if (noEllipsis) creators.add(noEllipsis);
+  };
+
+  const addTitle = (raw) => {
+    if (!raw || typeof raw !== 'string') return;
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    titles.add(trimmed);
+    titles.add(clampText(trimmed, 45));
+    titles.add(clampText(trimmed, 80));
+    const noEllipsis = trimmed.replace(/[\.…\s]+$/, '').trim();
+    if (noEllipsis) titles.add(noEllipsis);
+    // If title has separators like '|', '-', ':', index the primary headline segment
+    const segment = trimmed.split(/\s+[|\-:]\s+/)[0]?.trim();
+    if (segment && segment.length >= 3) {
+      titles.add(segment);
+    }
+  };
+
   // Top primary creators
   for (const c of profile.topCreators?.primary || []) {
-    if (c.name && c.name !== 'Unknown Channel') {
-      creators.add(c.name.trim());
-    }
+    addCreator(c.name);
   }
 
   // Secondary creators
   for (const name of profile.topCreators?.secondary || []) {
-    if (name && name !== 'Unknown Channel') {
-      creators.add(name.trim());
-    }
+    addCreator(name);
   }
 
   // Top repeated titles
   for (const item of profile.repeatedTitles?.topRepeats || []) {
-    if (item.title) {
-      titles.add(item.title.trim());
-    }
+    addTitle(item.title);
   }
 
   // Late-night titles
   for (const item of profile.lateNightTitles || []) {
-    if (item.title) {
-      titles.add(item.title.trim());
-    }
+    addTitle(item.title);
   }
 
   return {

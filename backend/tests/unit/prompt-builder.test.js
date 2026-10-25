@@ -222,4 +222,39 @@ describe('Prompt Builder & Evidence Guardrails (AI-03, AI-04, PRIV-03, D-16)', (
     expect(grounding.valid).toBe(false);
     expect(grounding.errors[0]).toContain('Complete Hallucination That Does Not Exist In Takeout');
   });
+
+  it('accepts clamped titles ending in ellipsis as valid grounded evidence', () => {
+    const profileWithLongTitle = {
+      ...demoNormalizedProfile,
+      repeatedTitles: {
+        ...demoNormalizedProfile.repeatedTitles,
+        topRepeats: [
+          {
+            title: 'How to Cure Mouth Ulcers Fast | Home Remedies & Treatment Guide',
+            count: 3
+          }
+        ]
+      }
+    };
+
+    const allowedEvidence = extractAllowedEvidence(profileWithLongTitle);
+
+    // Specific joke references the clamped version with ellipsis
+    const reportWithClampedTitle = {
+      ...demoRoastReport,
+      roasts: demoRoastReport.roasts.map((j) => {
+        if (j.style === 'specific') {
+          return {
+            ...j,
+            referencedItem: 'How to Cure Mouth Ulcers Fast | Home Remed...'
+          };
+        }
+        return j;
+      })
+    };
+
+    const grounding = validateJokeGrounding(reportWithClampedTitle, allowedEvidence);
+    expect(grounding.valid).toBe(true);
+    expect(grounding.errors).toHaveLength(0);
+  });
 });
